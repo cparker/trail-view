@@ -1,0 +1,142 @@
+:root {
+  --text-overlay-color: white;
+}
+
+html, body {
+  height: 100%;
+  font-family: sans-serif;
+  background-color: lightbrown;
+  overflow: hidden;
+}
+
+body {
+  padding: 2%;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.main-video {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  /*border: 1px solid red;*/
+  position: relative;
+}
+
+.main-video video {
+  width: 100%;
+}
+
+.main-video .map-overlay {
+  background: lightgreen;
+  opacity: 0.5;
+  position: absolute;
+  right: 0.5em;
+  bottom: 0.5em;
+  /*height: 200px;*/
+  width: 50%;
+  height: 50%;
+}
+
+.main-video .text-overlay {
+  position: absolute;
+  bottom: 0.5em;
+  /*border:1px solid white;*/
+  left: 0.8em;
+}
+
+.video-controls {
+  border: 1px solid brown;
+  position: relative;
+  width: 100%;
+}
+
+.main-video label {
+  display: block;
+  color: var(--text-overlay-color);
+  opacity: 0.8;
+  font-size: 1.2em;
+}
+
+.main-controls {
+  /*border: 1px solid orange;*/
+  display: flex;
+  flex-direction: row;
+}
+
+.control-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /*border: 1px solid black;*/
+  padding: 0.6em;
+}
+
+.control-column label {
+  display: block;
+}
+
+.control-column .control {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+
+.control-column.one {
+  flex: 2;
+  padding-left: 0;
+}
+
+.control-column input[type="range"] {
+  width: 100%;
+}
+
+.control-column input[type="text"] {
+  font-size: 0.9em;
+  border: 2px solid gray;
+  padding: 0.20em;
+  width: 95%;
+}
+
+.control-column.two {
+  flex: 2;
+}
+
+.control-column select {
+  font-size: 1.05em;
+}
+
+.control-column .color div.color-circle {
+  border-radius: 20%;
+  height: 20px;
+  width: 20px;
+  background-color: red;
+  display: inline-block;
+}
+
+.control-column.three .color label {
+  display: inline;
+}
+
+.control-column.three {
+  flex: 1;
+}
+
+.control-column.four {
+  flex: 1;
+  padding-right: 0;
+}
+
+.control-column.four button {
+  font-size: 1.1em;
+  width: 100%;
+}
+
+#encode-date {
+  font-size: 0.8em;
+}
+
+#track-start-datetime {
+  font-size: 0.8em;
+}
