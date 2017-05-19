@@ -26,7 +26,8 @@
     <div id="map" class="map-overlay"></div>
   </div>
   <div class="video-controls">
-    play button
+    <i id="play-pause" class="fa fa-play"></i>
+    <input id="video-position" type="range" min="0" max="100" value="0"></input>
   </div>
 
 
@@ -80,6 +81,11 @@
         <input id="map-size" type="range" min="0" max="100" value="50"></input>
       </div>
 
+      <div class="control">
+        <label>playback speed</label>
+        <input id="playback-speed" type="range" min="0" max="200" value="100"></input>
+      </div>
+
     </div>
 
     <div class="control-column three">
@@ -96,8 +102,9 @@
       </div>
 
       <div class="control">
-        <select>
+        <select id="tile-layer">
           <option value="open-topo">Open Topo</option>
+          <option value="usa-topo">USA Topo</option>
           <option value="usgs-topo">USGS Topo</option>
           <option value="ngs-topo">Nat Geo Topo</option>
           <option value="ngs-world">Nat Geo World</option>

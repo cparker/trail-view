@@ -5,6 +5,7 @@ const xml2js = require('xml2js')
 const xml2jsParser = xml2js.Parser()
 const fs = require('fs')
 const moment = require('moment')
+const settings = require('electron-settings')
 
 const videoElm = document.querySelector('.main-video video')
 const chooseVideoElm = document.querySelector('#choose-video')
@@ -27,12 +28,19 @@ const textColorElm = document.querySelector('#text-color')
 const elevationElm = document.querySelector('#elevation-field')
 const latFieldElm = document.querySelector('#lat-field')
 const lonFieldElm = document.querySelector('#lon-field')
+const tileLayerElm = document.querySelector('#tile-layer')
+const playPauseElm = document.querySelector('#play-pause')
+const videoPositionElm = document.querySelector('#video-position')
+const playbackSpeedElm = document.querySelector('#playback-speed')
 
 const feetPerMeter = 3.28084
 
 // boulder
 const initialMapLat = 40.0150
 const initialMapLon = -105.2705
+
+let textColor = '#FFFFFF'
+let trackColor = '#FF0000'
 
 const mapOptions = {
   zoomControl: false,
@@ -63,6 +71,14 @@ const natGeoWorldTopoTiles =
     attribution: 'National Geographic World Map http://goto.arcgisonline.com/maps/NatGeo_World_Map'
   })
 
+const usaTopoTiles =
+  L.tileLayer('http://services.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 18,
+    attribution: 'Copyright:© 2013 National Geographic Society, i-cubed'
+  })
+
+
+
 const theMap = L.map('map', mapOptions).setView([initialMapLat, initialMapLon], 11)
 
 const {
@@ -80,10 +96,100 @@ const trackFileFilters = [{
 }]
 
 
-let trackStartMoment, videoStartMoment, trackLayer
+let trackStartMoment, videoStartMoment, trackLayer, tileLayer, checkVideoInterval
 
 function initializeMap() {
-  openTopoTiles.addTo(theMap)
+  tileLayer = openTopoTiles
+  tileLayer.addTo(theMap)
+}
+
+function loadSettings() {
+  if (settings.has('lastVideoPath')) {
+    handleVideoFile(settings.get('lastVideoPath'))
+  }
+
+  if (settings.has('textColor')) {
+    textColor = settings.get('textColor')
+    document.documentElement.style.setProperty('--text-overlay-color', textColor)
+    textColorElm.value = textColor
+  }
+
+  if (settings.has('trackColor')) {
+    trackColor = settings.get('trackColor')
+    console.log('trackColor', trackColor)
+    trackColorElm.value = trackColor
+    if (trackLayer) {
+      trackLayer.setStyle({
+        color: trackColor
+      })
+    }
+  }
+
+  if (settings.has('lastTrackPath')) {
+    // waits for map to initialize... simpler this way
+    setTimeout(() => {
+      handleTrackFile(settings.get('lastTrackPath'))
+    }, 500)
+  }
+
+  if (settings.has('mapWidth')) {
+    mapOverlayElm.style.width = `${settings.get('mapWidth')}%`
+    mapSizeElm.value = settings.get('mapWidth')
+  }
+  if (settings.has('mapHeight')) {
+    mapOverlayElm.style.height = `${settings.get('mapHeight')}%`
+    mapSizeElm.value = settings.get('mapHeight')
+  }
+  if (settings.has('mapOpacity')) {
+    mapOverlayElm.style.opacity = parseInt(settings.get('mapOpacity')) / 100.0
+    mapOpacityElm.value = settings.get('mapOpacity')
+  }
+
+  if (settings.has('tileLayer')) {
+    tileLayerElm.value = settings.get('tileLayer')
+    handleChooseTileLayer()
+  }
+}
+
+
+function checkVideo() {
+  let videoPositionPercentage = Math.round( (videoElm.currentTime / videoElm.duration) * 100)
+  videoPositionElm.value = videoPositionPercentage
+}
+
+
+function handlePlayPause() {
+  if (videoElm.paused) {
+    videoElm.play()
+  } else {
+    videoElm.pause()
+  }
+}
+
+
+function handleChooseTileLayer() {
+  theMap.removeLayer(tileLayer)
+
+  switch (this.value || tileLayerElm.value) {
+    case 'open-topo':
+      tileLayer = openTopoTiles
+      break
+    case 'usgs-topo':
+      tileLayer = usgsTopoTiles
+      break
+    case 'ngs-topo':
+      tileLayer = natGeoTopoTiles
+      break
+    case 'ngs-world':
+      tileLayer = natGeoWorldTopoTiles
+      break
+    case 'usa-topo':
+      tileLayer = usaTopoTiles
+      break
+  }
+
+  tileLayer.addTo(theMap)
+  settings.set('tileLayer', this.value)
 }
 
 
@@ -96,6 +202,7 @@ function handleChooseVideo() {
     console.log('chosen path', path)
     if (path) {
       handleVideoFile(path)
+      settings.set('lastVideoPath', path)
     }
   })
 }
@@ -107,8 +214,8 @@ function handleChooseTrack() {
     properties: ['openFile']
   }, (path) => {
     console.log('chosen path', path)
-    if (path) {
-      handleTrackFile(path)
+    if (path[0]) {
+      handleTrackFile(path[0])
     }
   })
 }
@@ -246,7 +353,15 @@ function drawGPXTrack(path) {
   if (trackLayer) {
     theMap.removeLayer(trackLayer)
   }
-  const customLayer = L.geoJson(null, {})
+  const trackStyle = (feature) => {
+    return {
+      weight: 5,
+      color: trackColor
+    }
+  }
+  const customLayer = L.geoJson(null, {
+    style: trackStyle
+  })
   trackLayer = omnivore.gpx(path, null, customLayer)
   trackLayer.addTo(theMap)
   trackLayer.on('ready', () => {
@@ -282,11 +397,12 @@ function handleGPXFile(path) {
 
 
 function handleTrackFile(path) {
-  console.log('will load track', path)
+  console.log('handling', path)
   chooseTrackElm.value = path
 
-  if (path[0].endsWith('gpx')) {
-    handleGPXFile(path[0])
+  if (path.endsWith('gpx')) {
+    handleGPXFile(path)
+    settings.set('lastTrackPath', path)
   }
 }
 
@@ -308,6 +424,14 @@ function handleTextOverlayDisplay() {
 
 function handleTextColorInput() {
   document.documentElement.style.setProperty('--text-overlay-color', this.value)
+  settings.set('textColor', this.value)
+}
+
+function handleTrackColorInput() {
+  settings.set('trackColor', this.value)
+  trackLayer.setStyle({
+    color: this.value
+  })
 }
 
 showDateTimeElm.addEventListener('click', handleTextOverlayDisplay)
@@ -321,11 +445,14 @@ titleTextInput.addEventListener('input', function() {
 
 mapOpacityElm.addEventListener('input', function() {
   mapOverlayElm.style.opacity = parseInt(this.value) / 100.0
+  settings.set('mapOpacity', this.value)
 })
 
 mapSizeElm.addEventListener('input', function() {
   mapOverlayElm.style.height = `${this.value}%`
   mapOverlayElm.style.width = `${this.value}%`
+  settings.set('mapHeight', this.value)
+  settings.set('mapWidth', this.value)
   theMap.invalidateSize()
 })
 
@@ -333,5 +460,31 @@ chooseVideoElm.addEventListener('click', handleChooseVideo)
 chooseTrackElm.addEventListener('click', handleChooseTrack)
 
 textColorElm.addEventListener('input', handleTextColorInput)
+trackColorElm.addEventListener('input', handleTrackColorInput)
+
+tileLayerElm.addEventListener('change', handleChooseTileLayer)
+
+playPauseElm.addEventListener('click', handlePlayPause)
+
+playbackSpeedElm.addEventListener('input', function() {
+  videoElm.playbackRate = this.value / 100
+})
+
+videoPositionElm.addEventListener('input', function() {
+  videoElm.currentTime = videoElm.duration * parseInt(this.value) / 100.0
+})
+
+videoElm.addEventListener('play', () => {
+  playPauseElm.classList.remove('fa-play')
+  playPauseElm.classList.add('fa-pause')
+  checkVideoInterval = setInterval(checkVideo, 500)
+})
+
+videoElm.addEventListener('pause', () => {
+  playPauseElm.classList.remove('fa-pause')
+  playPauseElm.classList.add('fa-play')
+  clearInterval(checkVideoInterval)
+})
 
 initializeMap()
+loadSettings()

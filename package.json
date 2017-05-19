@@ -21,6 +21,7 @@
     "electron": "~1.6.2"
   },
   "dependencies": {
+    "electron-settings": "^3.0.14",
     "font-awesome": "^4.7.0",
     "leaflet": "^1.0.3",
     "leaflet-omnivore": "^0.3.4",
