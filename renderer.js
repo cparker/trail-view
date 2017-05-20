@@ -6,6 +6,7 @@ const xml2jsParser = xml2js.Parser()
 const fs = require('fs')
 const moment = require('moment')
 const settings = require('electron-settings')
+const geolib = require('geolib')
 
 const videoElm = document.querySelector('.main-video video')
 const chooseVideoElm = document.querySelector('#choose-video')
@@ -31,13 +32,20 @@ const lonFieldElm = document.querySelector('#lon-field')
 const tileLayerElm = document.querySelector('#tile-layer')
 const playPauseElm = document.querySelector('#play-pause')
 const videoPositionElm = document.querySelector('#video-position')
+const trackPositionElm = document.querySelector('#track-position')
 const playbackSpeedElm = document.querySelector('#playback-speed')
+const showHeadingElm = document.querySelector('#show-heading')
+const headingElm = document.querySelector('#heading')
+const speedFieldElm = document.querySelector('#speed-field')
+const headingFieldElm = document.querySelector('#heading-field')
 
 const feetPerMeter = 3.28084
 
 // boulder
 const initialMapLat = 40.0150
 const initialMapLon = -105.2705
+
+const framesPerSecond = 30.0
 
 let textColor = '#FFFFFF'
 let trackColor = '#FF0000'
@@ -96,7 +104,8 @@ const trackFileFilters = [{
 }]
 
 
-let trackStartMoment, videoStartMoment, trackLayer, tileLayer, checkVideoInterval
+let trackStartMoment, videoStartMoment, trackLayer, tileLayer, checkVideoInterval, trackPoints, trackIndex,
+  trackMarker
 
 function initializeMap() {
   tileLayer = openTopoTiles
@@ -153,8 +162,7 @@ function loadSettings() {
 
 
 function checkVideo() {
-  let videoPositionPercentage = Math.round( (videoElm.currentTime / videoElm.duration) * 100)
-  videoPositionElm.value = videoPositionPercentage
+  videoPositionElm.value = videoElm.currentTime * framesPerSecond
 }
 
 
@@ -260,6 +268,11 @@ function handleVideoFile(path) {
   videoElm.src = path
   videoElm.poster = null
   videoElm.currentTime = 0.01
+
+  videoElm.addEventListener('durationchange', function() {
+    // assume 30 frames per second, give the slider a mark for every frame
+    videoPositionElm.max = videoElm.duration * framesPerSecond
+  })
 }
 
 function valid(valid, message) {
@@ -369,6 +382,32 @@ function drawGPXTrack(path) {
   })
 }
 
+
+function extractTrackPoints(gpsData) {
+  return (() => {
+    try {
+      return gpsData.gpx.trk[0].trkseg[0].trkpt
+    } catch (err) {
+      return undefined
+    }
+  })()
+}
+
+
+function createMarker(lat, lon) {
+  // icon anchor is offset from the image, assuming 0,0 is upper left of the image
+  let arrowIcon = L.icon({
+    iconUrl: 'Up-Arrow-PNG-Transparent-Image.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 0]
+  })
+  const marker = L.marker(L.latLng(lat, lon), {
+    icon: arrowIcon
+  })
+  return marker
+}
+
+
 function handleGPXFile(path) {
   let gpxText = fs.readFileSync(path, 'utf-8')
   xml2jsParser.parseString(gpxText, (err, parsedGPX) => {
@@ -381,6 +420,8 @@ function handleGPXFile(path) {
     // TODO remove this , its only for debug
     global.gpsData = parsedGPX
     console.log(checkValidGPX(parsedGPX))
+    trackPoints = extractTrackPoints(parsedGPX)
+    trackPositionElm.max = trackPoints.length
     const trackTime = moment(extractStartTime(parsedGPX))
     trackStartDatetimeElm.innerHTML = `Start: ${trackTime.format('ddd MMM DD h:mm:ss A')}`
     dateTimeElm.innerHTML = trackTime.format('dddd MMM DD, YYYY')
@@ -388,6 +429,8 @@ function handleGPXFile(path) {
     titleElm.innerHTML = extractTrackName(parsedGPX)
     elevationElm.innerHTML = extractStartElevation(parsedGPX)
     const LL = extractStartLL(parsedGPX)
+    trackMarker = createMarker(LL[0], LL[1])
+    trackMarker.addTo(theMap)
     latFieldElm.innerHTML = LL[0]
     lonFieldElm.innerHTML = LL[1]
 
@@ -415,11 +458,11 @@ function showHideElm(elm, show) {
 }
 
 function handleTextOverlayDisplay() {
-  console.log('handleTextOverlayDisplay', showDateTimeElm.checked)
   showHideElm(titleElm, titleTextInput.value.length > 0)
   showHideElm(dateTimeElm, showDateTimeElm.checked)
   showHideElm(speedElevationElm, showSpeedElevationElm.checked)
   showHideElm(latlonElm, showLLElm.checked)
+  showHideElm(headingElm, showHeadingElm.checked)
 }
 
 function handleTextColorInput() {
@@ -434,10 +477,48 @@ function handleTrackColorInput() {
   })
 }
 
+
+function handleTrackPositionChange() {
+  if (!trackPoints) {
+    return
+  }
+  trackIndex = this.value
+  console.log('track index', trackIndex, trackPoints[trackIndex])
+  const ll = L.latLng(trackPoints[trackIndex].$.lat, trackPoints[trackIndex].$.lon)
+  theMap.panTo(ll)
+  trackMarker.setLatLng(ll)
+
+  const previousTrackIndex = Math.max(trackIndex - 1, 0)
+
+  const prevPointTime = {
+    lat: trackPoints[previousTrackIndex].$.lat,
+    lng: trackPoints[previousTrackIndex].$.lon,
+    time: moment(trackPoints[previousTrackIndex].time[0]).valueOf()
+  }
+  const currentPointTime = {
+    lat: trackPoints[trackIndex].$.lat,
+    lng: trackPoints[trackIndex].$.lon,
+    time: moment(trackPoints[trackIndex].time[0]).valueOf()
+  }
+
+  const speedMPH = geolib.getSpeed(prevPointTime, currentPointTime, {
+    unit: 'mph'
+  })
+  const heading = geolib.getBearing(prevPointTime, currentPointTime)
+  trackMarker.setRotationAngle(heading)
+  speedFieldElm.innerHTML = Math.round(speedMPH)
+  headingFieldElm.innerHTML = Math.round(heading)
+  latFieldElm.innerHTML = trackPoints[trackIndex].$.lat
+  lonFieldElm.innerHTML = trackPoints[trackIndex].$.lon
+  elevationElm.innerHTML = Math.round(trackPoints[trackIndex].ele[0] * feetPerMeter)  // TODO handle unit preference
+}
+
+
 showDateTimeElm.addEventListener('click', handleTextOverlayDisplay)
 showSpeedElevationElm.addEventListener('click', handleTextOverlayDisplay)
 showLLElm.addEventListener('click', handleTextOverlayDisplay)
 titleTextInput.addEventListener('input', handleTextOverlayDisplay)
+showHeadingElm.addEventListener('click', handleTextOverlayDisplay)
 
 titleTextInput.addEventListener('input', function() {
   titleElm.innerHTML = this.value
@@ -466,12 +547,15 @@ tileLayerElm.addEventListener('change', handleChooseTileLayer)
 
 playPauseElm.addEventListener('click', handlePlayPause)
 
+
 playbackSpeedElm.addEventListener('input', function() {
   videoElm.playbackRate = this.value / 100
 })
 
+trackPositionElm.addEventListener('input', handleTrackPositionChange)
+
 videoPositionElm.addEventListener('input', function() {
-  videoElm.currentTime = videoElm.duration * parseInt(this.value) / 100.0
+  videoElm.currentTime = this.value / framesPerSecond
 })
 
 videoElm.addEventListener('play', () => {
