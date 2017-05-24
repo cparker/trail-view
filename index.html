@@ -20,25 +20,25 @@
     <div class="text-overlay">
       <label id="title">Rabbit Valley</label>
       <label id="date-time">Saturday May 5th, 2017</label>
-      <label id="speed-elevation"><span id="speed-field">--</span> MPH, <span id="elevation-field">5280</span> Ft.</label>
+      <label id="speed-elevation"><span id="speed-field">--</span> MPH, <span id="elevation-field">5280</span> Ft., <span id="heading-field">342</span>º <span id="compass-field">NNW</span></label>
       <!-- TODO can't forget to make N and W dynamic!!! -->
       <label id="latlon"><span id="lat-field">45.042975421</span> º N, <span id="lon-field">-104.12348731</span> º W</label>
-      <label id="heading">heading <span id="heading-field">342</span>º NNW </label>
     </div>
     <div id="map" class="map-overlay"></div>
   </div>
   <div class="track-video-controls">
-    <i id="play-pause" class="fa fa-play fa-2x"></i>
+    <i id="play-pause" class="play-pause fa fa-play fa-2x"></i>
     <div class="sliders">
-      <div class="slider-w-label">
-        <label>video</label>
+      <div class="slider-w-label video">
+        <label>video   <i class="fa fa-caret-right"></i></label>
         <input id="video-position" type="range" min="0" value="0"></input>
       </div>
-      <div class="slider-w-label">
-        <label>track</label>
+      <div class="slider-w-label track">
+        <label>track   <i class="fa fa-caret-right"></i></label>
         <input id="track-position" type="range" min="0" value="0"></input>
       </div>
     </div>
+    <i id="track-video-lock" class="lock-unlock fa fa-lock fa-2x"></i>
   </div>
 
 
@@ -62,15 +62,11 @@
       </div>
 
       <div class="control">
-        <input id="show-speed-elevation" type="checkbox" checked>show speed and elevation</input>
+        <input id="show-speed-elevation" type="checkbox" checked>show speed, elevation, heading</input>
       </div>
 
       <div class="control">
         <input id="show-LL" type="checkbox" checked>show Lat / Lon</input>
-      </div>
-
-      <div class="control">
-        <input id="show-heading" type="checkbox" checked>show heading</input>
       </div>
 
     </div>
@@ -84,7 +80,7 @@
 
       <div class="control">
         <label>map zoom</label>
-        <input type="range"></input>
+        <input id="map-zoom" type="range" min="1" max="25" value="11"></input>
       </div>
 
       <div class="control">
@@ -101,14 +97,14 @@
 
     <div class="control-column three">
       <div class="control">
-        <select>
-          <option value="regular video">regular video</option>
-          <option value="1 sec time lapse">1 sec time lapse</option>
-          <option value="2 sec time lapse">2 sec time lapse</option>
-          <option value="3 sec time lapse">3 sec time lapse</option>
-          <option value="5 sec time lapse">5 sec time lapse</option>
-          <option value="30 sec time lapse">30 sec time lapse</option>
-          <option value="60 sec time lapse">60 sec time lapse</option>
+        <select id="video-type">
+          <option value="regular-video">regular video</option>
+          <option value="1-sec-time-lapse">1 sec time lapse</option>
+          <option value="2-sec-time-lapse">2 sec time lapse</option>
+          <option value="3-sec-time-lapse">3 sec time lapse</option>
+          <option value="5-sec-time-lapse">5 sec time lapse</option>
+          <option value="30-sec-time-lapse">30 sec time lapse</option>
+          <option value="60-sec-time-lapse">60 sec time lapse</option>
         </select>
       </div>
 
@@ -119,6 +115,8 @@
           <option value="usgs-topo">USGS Topo</option>
           <option value="ngs-topo">Nat Geo Topo</option>
           <option value="ngs-world">Nat Geo World</option>
+          <option value="open-cycle">Open Cycle Map</option>
+          <option value="open-street">Open Street Map</option>
         </select>
       </div>
 
@@ -141,6 +139,11 @@
       </div>
     </div>
 
+  </div>
+
+  <div class="add-waypoint hidden">
+    <label>new marker name</label>
+    <input id="new-waypoint" type="text"></input>
   </div>
 </body>
 

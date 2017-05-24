@@ -55,9 +55,15 @@ body {
   flex-direction: row;
 }
 
-.track-video-controls i {
+.track-video-controls i.play-pause {
   flex: 1;
   align-self: center;
+}
+
+.track-video-controls i.lock-unlock {
+  flex: 1;
+  align-self: center;
+  text-align: center;
 }
 
 .track-video-controls .sliders {
@@ -68,7 +74,7 @@ body {
 
 .sliders .slider-w-label {
   flex: 1;
-  display:flex;
+  display: flex;
   flex-direction: row;
 }
 
@@ -166,4 +172,62 @@ body {
 
 #track-start-datetime {
   font-size: 0.8em;
+}
+
+.slider-w-label.track label.selected {
+  font-weight: bold;
+}
+
+.slider-w-label.video label.selected {
+  font-weight: bold;
+}
+
+.slider-w-label.track label.selected i {
+  visibility: visible;
+}
+
+.slider-w-label.track label:not(.selected) i {
+  visibility: hidden;
+}
+
+.slider-w-label.video label.selected i {
+  visibility: visible;
+}
+
+.slider-w-label.video label:not(.selected) i {
+  visibility: hidden;
+}
+
+.my-div-icon {
+  color: red;
+}
+
+.my-div-text-icon {
+  color: #3900ab;
+  font-size: 1.8em;
+  width: 9.1em !important;
+  height: 1.6em !important;
+  margin-left: 16px !important;
+}
+
+.add-waypoint {
+  position: absolute;
+  height: 10vh;
+  width: 25vh;
+  background: white;
+  border: 7px solid gray;
+  top: 20%;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.0em;
+}
+
+.add-waypoint input[type="text"] {
+  border: 2px solid gray;
+  font-size: 1.2em;
 }
