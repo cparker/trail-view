@@ -210,6 +210,16 @@ function loadSettings() {
     videoElm.playbackRate = parseInt(settings.get('playbackSpeed')) / 100
     playbackSpeedElm.value = settings.get('playbackSpeed')
   }
+  if (settings.has('lockedPositions')) {
+    trackVideoLockElm.classList.add('fa-lock')
+    trackVideoLockElm.classList.remove('fa-unlock')
+    lockedPositions = settings.get('lockedPositions')
+    videoElm.currentTime = lockedPositions.videoCurrentTimeSec
+    videoPositionElm.value = lockedPositions.videoFrame
+    trackPositionElm.value = lockedPositions.trackIndex
+    locked = true
+
+  }
 }
 
 
@@ -219,7 +229,7 @@ function getTrackIndexForVideoPosition(allowBackwards) {
   // {video: 1.166666, trackIndex: "10", time: "2017-05-06T14:26:40Z"}
   const lockedTimeMoment = moment(lockedPositions.time)
   // console.log('lockedTimeMoment', lockedTimeMoment.toISOString())
-  const seconds = (videoElm.currentTime - lockedPositions.video) * framesPerSecond * secondsPerVideoFrame
+  const seconds = (videoElm.currentTime - lockedPositions.videoCurrentTimeSec) * framesPerSecond * secondsPerVideoFrame
   // console.log('seconds', seconds)
   const realWorldVideoTimeAtCurrentPoint = lockedTimeMoment.clone().add(seconds, 'seconds')
   // console.log('realWorldVideoTimeAtCurrentPoint', realWorldVideoTimeAtCurrentPoint.toISOString())
@@ -394,6 +404,7 @@ function checkValidGPX(gpxData) {
   if (!track.trkseg) {
     return valid(false, 'Track contains no segments')
   }
+  console.log('working with', track.trkseg)
 
   // assume first segment
   const segment = track.trkseg[0]
@@ -517,9 +528,11 @@ function drawGPXTrack(path, gpxJSON) {
   })
 
   // draw names for the waypoints
-  gpxJSON.gpx.wpt.forEach(waypoint => {
-    addStarMarker(waypoint.name[0], waypoint.$.lat, waypoint.$.lon)
-  })
+  if (gpxJSON.gpx.wpt) {
+    gpxJSON.gpx.wpt.forEach(waypoint => {
+      addStarMarker(waypoint.name[0], waypoint.$.lat, waypoint.$.lon)
+    })
+  }
 
 }
 
@@ -597,7 +610,7 @@ function handleTrackFile(path) {
   console.log('handling', path)
   chooseTrackElm.value = path
 
-  if (path.endsWith('gpx')) {
+  if (path.toLowerCase().endsWith('gpx')) {
     handleGPXFile(path)
     settings.set('lastTrackPath', path)
   }
@@ -679,10 +692,10 @@ function handleTrackPositionChange() {
 
     const framesDiff = (millisecondsDiff / 1000) / secondsPerVideoFrame
     console.log('framesDiff', framesDiff)
-    const videoPosSec = lockedPositions.video + (millisecondsDiff / 1000)
+    const videoPosSec = lockedPositions.videoCurrentTimeSec + (millisecondsDiff / 1000)
     console.log('videoPosSec', videoPosSec)
     videoElm.currentTime = videoPosSec
-    videoPositionElm.value = (lockedPositions.video * framesPerSecond) + framesDiff
+    videoPositionElm.value = (lockedPositions.videoCurrentTimeSec * framesPerSecond) + framesDiff
   }
 
   updateDisplayFromTrackPosition()
@@ -746,6 +759,7 @@ function handleLock() {
   if (locked) {
     this.classList.remove('fa-lock')
     this.classList.add('fa-unlock')
+    settings.delete('lockedPositions')
   } else {
     this.classList.add('fa-lock')
     this.classList.remove('fa-unlock')
@@ -758,10 +772,12 @@ function handleLock() {
 
   locked = !locked
   if (locked) {
-    lockedPositions.video = videoElm.currentTime,
-      lockedPositions.trackIndex = trackIndex,
-      lockedPositions.time = trackPoints[trackIndex].time[0],
-      lockedPositions.moment = moment(trackPoints[trackIndex].time[0])
+    lockedPositions.videoCurrentTimeSec = videoElm.currentTime
+    lockedPositions.videoFrame = videoPositionElm.value
+    lockedPositions.trackIndex = trackIndex
+    lockedPositions.time = trackPoints[trackIndex].time[0]
+    lockedPositions.moment = moment(trackPoints[trackIndex].time[0])
+    settings.set('lockedPositions', lockedPositions)
     console.log('lockedPositions', lockedPositions)
   }
 }
@@ -797,6 +813,9 @@ function handleNewWaypoint(event) {
         lon: `${mapMouseEvent.latlng.lng}`
       },
       name: this.value
+    }
+    if (!gpxJSON.gpx.wpt) {
+      gpxJSON.gpx.wpt = []
     }
     gpxJSON.gpx.wpt.push(newWaypoint)
     const xml = builder.buildObject(gpxJSON)
