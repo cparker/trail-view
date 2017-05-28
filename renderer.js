@@ -44,6 +44,9 @@ const compassElm = document.querySelector('#compass-field')
 const mapZoomElm = document.querySelector('#map-zoom')
 const newWaypointElm = document.querySelector('#new-waypoint')
 const addWaypointDialog = document.querySelector('.add-waypoint')
+const elevationCanvasElm = document.querySelector('#elevation-canvas-element')
+const currentElevationCanvasElm = document.querySelector('#current-elevation-marker-canvas-element')
+const elevationGraphElm = document.querySelector('.elevation-graph-inner')
 
 const feetPerMeter = 3.28084
 
@@ -123,7 +126,7 @@ const trackFileFilters = [{
 
 let trackStartMoment, videoStartMoment, trackLayer, tileLayer, checkVideoInterval, trackPoints, trackIndex,
   trackMarker, locked, videoSliderPosition, trackSliderPosition, secondsPerVideoFrame,
-  lockedPositions, activeSlider, mapMouseEvent, gpxJSON, loadedGpxFile
+  lockedPositions, activeSlider, mapMouseEvent, gpxJSON, loadedGpxFile, elevationTrackPoints, elevationDrawingCtx, currentElevationDrawingCtx
 
 function initializeMap() {
   tileLayer = openTopoTiles
@@ -134,6 +137,7 @@ function initializeMap() {
   trackIndex = 0
   secondsPerVideoFrame = 1 / framesPerSecond
   lockedPositions = {}
+  elevationTrackPoints = {}
   trackVideoLockElm.classList.remove('fa-lock')
   trackVideoLockElm.classList.add('fa-unlock')
   theMap.on('click', handleMapClick)
@@ -141,6 +145,13 @@ function initializeMap() {
     console.log('zoom', z.target._zoom)
     mapZoomElm.value = z.target._zoom
   })
+  currentElevationDrawingCtx = currentElevationCanvasElm.getContext('2d')
+
+
+  elevationCanvasElm.height = elevationGraphElm.offsetHeight
+  currentElevationCanvasElm.height = elevationGraphElm.offsetHeight
+
+  console.log(`div hieght is ${elevationGraphElm.offsetHeight}, canvas height is ${elevationCanvasElm.height}`)
 }
 
 
@@ -264,6 +275,7 @@ function checkVideo() {
     trackIndex = getTrackIndexForVideoPosition()
     trackPositionElm.value = trackIndex
     updateDisplayFromTrackPosition()
+    drawCurrentElevationMarker()
   }
 }
 
@@ -498,6 +510,39 @@ function addStarMarker(text, lat, lon) {
 }
 
 
+function drawCurrentElevationMarker() {
+  let ti = trackIndex
+  const closestPoint = (() => {
+    while (!elevationTrackPoints[ti]) {
+      ti++
+    }
+    return elevationTrackPoints[ti]
+  })()
+
+  // draw a white vertical line
+  currentElevationDrawingCtx.beginPath()
+  currentElevationDrawingCtx.clearRect(0, 0, currentElevationCanvasElm.width, currentElevationCanvasElm.height)
+  currentElevationDrawingCtx.moveTo(closestPoint.x, currentElevationCanvasElm.height)
+  currentElevationDrawingCtx.strokeStyle = "#FFFFFF";
+  currentElevationDrawingCtx.lineTo(closestPoint.x, 0)
+  currentElevationDrawingCtx.stroke()
+  currentElevationDrawingCtx.closePath()
+}
+
+
+function drawElevationGraph() {
+  elevationDrawingCtx.clearRect(0, 0, elevationCanvasElm.width, elevationCanvasElm.height)
+
+  Object.keys(elevationTrackPoints).forEach(trackIndexKey => {
+    const point = elevationTrackPoints[trackIndexKey]
+    // now we draw a line that starts at the bottom of the area, to pctHeight to the top
+    elevationDrawingCtx.moveTo(point.x, elevationCanvasElm.height)
+    elevationDrawingCtx.lineTo(point.x, elevationCanvasElm.height - point.pixelHeight)
+    elevationDrawingCtx.stroke()
+  })
+}
+
+
 function drawGPXTrack(path, gpxJSON) {
   if (trackLayer) {
     theMap.removeLayer(trackLayer)
@@ -534,6 +579,64 @@ function drawGPXTrack(path, gpxJSON) {
     })
   }
 
+  elevationDrawingCtx = elevationCanvasElm.getContext('2d')
+  let minMaxElev = trackPoints.reduce((accum, point) => {
+    if (parseFloat(point.ele[0]) < accum.min) {
+      accum.min = parseFloat(point.ele[0])
+    }
+    if (parseFloat(point.ele[0]) > accum.max) {
+      accum.max = parseFloat(point.ele[0])
+    }
+    return accum
+
+  }, {
+    min: 50000,
+    max: -1
+  })
+
+  const elevRange = parseFloat(minMaxElev.max) - parseFloat(minMaxElev.min)
+  let x = 0
+
+  // FIXME, the idea here is to make the canvas width (visible width) match the number of points
+  // so that the elevation graph 'fills' the whole way across
+  // if the canvas visible width is less than the actual pixel width , then the canvas
+  // will 'stretch' the content, which is actually what we want
+
+  // FIXME #2 , the / 2 needs to be computed
+  elevationCanvasElm.width = trackPoints.length / 2
+  currentElevationCanvasElm.width = elevationCanvasElm.width // needs to match
+  currentElevationDrawingCtx = currentElevationCanvasElm.getContext('2d')
+
+  // build the array of elevationTrackPoints, but don't draw them yet
+  trackPoints.forEach((point, index) => {
+    // we can skip drawing every point to make the whole track fit
+    // let modFactor = Math.round(trackPoints.length / elevationCanvasElm.width)
+
+    // FIXME, this needs to be computed
+    let modFactor = 2
+    if (index % modFactor != 0) {
+
+      // hacky way to keep track
+      elevationTrackPoints[index] = point
+
+      // minMaxElev.max should be the full height of the area, and min should be the bottom
+      const totalHeight = elevRange
+      const markerHeight = parseFloat(point.ele[0]) - minMaxElev.min
+      const pctHeight = markerHeight / totalHeight
+      let pixelHeight = Math.round(pctHeight * elevationGraphElm.offsetHeight)
+      // pixelHeight -= 50 // fudge factor
+
+      elevationTrackPoints[index].x = x
+      elevationTrackPoints[index].pixelHeight = pixelHeight
+
+      x = x + 1;
+    }
+  })
+
+  drawElevationGraph()
+
+  // TODO remove this
+  global.et = elevationTrackPoints
 }
 
 
@@ -684,35 +787,20 @@ function handleTrackPositionChange() {
 
   // set the global track index per the slider
   trackIndex = this.value
+  console.log('trackIndex', trackIndex, 'currentPoint', trackPoints[trackIndex])
 
   if (locked) {
     // this is the number of millis between the locked track position and the current track position
-    const millisecondsDiff = trackPoints[trackIndex].moment.diff(lockedPositions.moment)
-    console.log('msdiff', millisecondsDiff)
-
-    const framesDiff = (millisecondsDiff / 1000) / secondsPerVideoFrame
-    console.log('framesDiff', framesDiff)
-    const videoPosSec = lockedPositions.videoCurrentTimeSec + (millisecondsDiff / 1000)
-    console.log('videoPosSec', videoPosSec)
-    videoElm.currentTime = videoPosSec
-    videoPositionElm.value = (lockedPositions.videoCurrentTimeSec * framesPerSecond) + framesDiff
+    const realWorldSecDiff = trackPoints[trackIndex].moment.diff(lockedPositions.moment) / 1000
+    console.log('realWorldSecDiff', realWorldSecDiff)
+    newVideoPositionSeconds = lockedPositions.videoCurrentTimeSec + (realWorldSecDiff / secondsPerVideoFrame / framesPerSecond)
+    console.log('newVideoPositionSeconds', newVideoPositionSeconds)
+    videoElm.currentTime = newVideoPositionSeconds
+    videoPositionElm.value = videoElm.currentTime * framesPerSecond
   }
 
   updateDisplayFromTrackPosition()
-
-  // if locked, move the video position in proportion
-  // if (locked) {
-  //   // figure out the proportional change
-  //   const delta = this.value - trackSliderPosition
-  //   const pct = delta / this.max
-  //   console.log('video position max', videoPositionElm.max)
-  //   console.log('delta, pct', delta, pct)
-  //   console.log('current video position', videoPositionElm.value)
-  //   console.log('changing video position slider by', videoPositionElm.max * pct)
-  //   videoPositionElm.value = parseInt(videoPositionElm.value) + Math.round(videoPositionElm.max * pct)
-  //   console.log('videoPositionElm.value now', videoPositionElm.value)
-  //   videoElm.currentTime = parseInt(videoPositionElm.value) / framesPerSecond
-  // }
+  drawCurrentElevationMarker()
 
   trackSliderPosition = this.value
 }
@@ -898,6 +986,7 @@ videoPositionElm.addEventListener('input', function() {
     trackIndex = getTrackIndexForVideoPosition(true) // allowBackwards is true
     trackPositionElm.value = trackIndex
     updateDisplayFromTrackPosition()
+    drawCurrentElevationMarker()
   }
 
 })
@@ -915,6 +1004,12 @@ videoElm.addEventListener('pause', () => {
 })
 
 newWaypointElm.addEventListener('keydown', handleNewWaypoint)
+
+document.querySelector('body').addEventListener('resize', () => {
+  console.log('body resize')
+
+  // TODO, handle the canvas resizing here
+})
 
 initializeMap()
 loadSettings()

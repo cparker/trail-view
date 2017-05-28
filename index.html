@@ -25,6 +25,12 @@
       <label id="latlon"><span id="lat-field">45.042975421</span> º N, <span id="lon-field">-104.12348731</span> º W</label>
     </div>
     <div id="map" class="map-overlay"></div>
+    <div class="elevation-graph-outer">
+      <div class="elevation-graph-inner">
+        <canvas id="elevation-canvas-element"></canvas>
+        <canvas id="current-elevation-marker-canvas-element"></canvas>
+      </div>
+    </div>
   </div>
   <div class="track-video-controls">
     <i id="play-pause" class="play-pause fa fa-play fa-2x"></i>
@@ -145,6 +151,7 @@
     <label>new marker name</label>
     <input id="new-waypoint" type="text"></input>
   </div>
+
 </body>
 
 <script>

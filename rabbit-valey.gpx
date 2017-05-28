@@ -70,6 +70,9 @@
   <wpt lat="39.12596960302989" lon="-109.0523797273636">
     <name>dead end sign</name>
   </wpt>
+  <wpt lat="39.139932143673285" lon="-109.06803444027902">
+    <name>wire gate</name>
+  </wpt>
   <trk>
     <name>rabbit valley recorded track</name>
     <desc/>
