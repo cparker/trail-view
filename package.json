@@ -18,7 +18,9 @@
   "author": "cp@cjparker.us",
   "license": "MIT",
   "devDependencies": {
-    "electron": "~1.6.2"
+    "babel-eslint": "^7.2.3",
+    "electron": "~1.6.2",
+    "eslint": "^3.19.0"
   },
   "dependencies": {
     "electron-settings": "^3.0.14",

@@ -249,7 +249,7 @@ body {
   left: 0;
   width: 100%;
   height: 75px;
-  background-color: brown;
+  background-color: #fdcfae;
   opacity: 0.4;
 }
 
@@ -271,6 +271,7 @@ body {
   top: 30%;
   left: 0;
   padding: 1.5em;
+  box-shadow: 7px 7px 20px #888888;
 }
 
 .error-dialog .content {
