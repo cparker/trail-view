@@ -8,6 +8,8 @@ const fs = require('fs')
 const moment = require('moment')
 const settings = require('electron-settings')
 const geolib = require('geolib')
+const toGeoJSON = require('togeojson')
+const xmlParser = require('xmldom').DOMParser
 
 const videoElm = document.querySelector('.main-video video')
 const chooseVideoElm = document.querySelector('#choose-video')
@@ -47,6 +49,10 @@ const addWaypointDialog = document.querySelector('.add-waypoint')
 const elevationCanvasElm = document.querySelector('#elevation-canvas-element')
 const currentElevationCanvasElm = document.querySelector('#current-elevation-marker-canvas-element')
 const elevationGraphElm = document.querySelector('.elevation-graph-inner')
+const errorDialogElm = document.querySelector('.error-dialog')
+const errorTitleElm = document.querySelector('.error-dialog .content .message')
+const errorDetailsElm = document.querySelector('.error-dialog .content .message-details')
+const errorOKElm = document.querySelector('.error-dialog .content button')
 
 const feetPerMeter = 3.28084
 
@@ -562,6 +568,7 @@ function drawGPXTrack(path, gpxJSON) {
     }
   })
   trackLayer = omnivore.gpx(path, null, customLayer)
+  global.trackLayer = trackLayer // TODO remove this
   trackLayer.addTo(theMap)
   trackLayer.on('ready', () => {
     if (settings.has('mapZoom')) {
@@ -666,6 +673,7 @@ function createMarker(lat, lon) {
 
 
 function handleGPXFile(path) {
+  showError('Oops', 'Oh dear')
   let gpxText = fs.readFileSync(path, 'utf-8')
   xml2jsParser.parseString(gpxText, (err, parsedGPX) => {
     loadedGpxFile = path
@@ -923,6 +931,17 @@ function handleNewWaypoint(event) {
 }
 
 
+function showError(title, message) {
+  errorTitleElm.innerHTML = title
+  errorDetailsElm.innerHTML = message
+  errorDialogElm.classList.remove('hidden')
+}
+
+errorOKElm.addEventListener('click', () => {
+  errorDialogElm.classList.add('hidden')
+})
+
+
 showDateTimeElm.addEventListener('click', handleTextOverlayDisplay)
 showSpeedElevationElm.addEventListener('click', handleTextOverlayDisplay)
 showLLElm.addEventListener('click', handleTextOverlayDisplay)
@@ -1016,21 +1035,5 @@ loadSettings()
 
 
 /**
-  • add icon names to map
-  The simplest way to handle this will be to just parse the gpx ourselves (we already do this)
-  and add our own markers to the map.
 
-  The current approach involves adding a hook that gets called for each 'feature' as it's added
-  that's more for attaching popups and stuff.  Let's just add more markers... simpler
-
-  • fix independent sliders
-    It might be usful to have one method that does the video / track syncing which is used
-    both during play AND scrubbing
-
-  • play button behavior when unlocked?
-    When unlocked, what should the play button do?
-
-  • add points
-    I want the ability to add points with labels in this tool.  This will be useful because as I
-    watch the video with the track, I want to add things like 'this is a good lunch spot'
 */

@@ -2,7 +2,6 @@
   --text-overlay-color: white;
 }
 
-
 html, body {
   height: 100%;
   font-family: sans-serif;
@@ -238,10 +237,10 @@ body {
 }
 
 .elevation-graph-outer {
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 }
 
 .elevation-graph-inner {
@@ -256,8 +255,45 @@ body {
 
 .elevation-graph-inner canvas {
   position: absolute;
-  top:0;
-  left:0;
+  top: 0;
+  left: 0;
   height: 100%;
   width: 100%;
+}
+
+.error-dialog {
+  background: tan;
+  position: absolute;
+  width: 50vw;
+  height: 25vh;
+  margin: 0 auto;
+  right: 0;
+  top: 30%;
+  left: 0;
+  padding: 1.5em;
+}
+
+.error-dialog .content {
+  display:flex;
+  flex-direction: column;
+  height:100%;
+}
+
+.error-dialog .content .message {
+  flex:1;
+  font-size: 1.2em;
+}
+
+.error-dialog .content .message-details {
+  flex:3;
+  overflow: auto;
+}
+
+.error-dialog .content .footer {
+  flex:1;
+  text-align: end;
+}
+
+.error-dialog .content .footer button {
+  font-size: 1.5em;
 }
