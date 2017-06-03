@@ -1,2 +1,5 @@
 node_modules
 *.mov
+.DS_Store
+foo.webm
+

@@ -21,21 +21,26 @@ const appMenu = Menu.buildFromTemplate(menuTemplate)
 let mainWindow
 
 function createWindow() {
-  // Create the browser window.
+    // used to share data between windows
+    global.sharedObj = {}
+    global.sharedObj.videoURL = ''
+    global.sharedObj.videoTime = 0.0
+
+    // Create the browser window.
     mainWindow = new BrowserWindow({
         width: 850,
         height: 900,
         frame: true
     })
 
-  // and load the index.html of the app.
+    // and load the index.html of the app.
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'index.html'),
         protocol: 'file:',
         slashes: true
     }))
 
-    //Menu.setApplicationMenu(appMenu)
+    // Menu.setApplicationMenu(appMenu)
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()

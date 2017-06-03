@@ -12,6 +12,10 @@ const toGeoJSON = require('togeojson')
 const toGPX = require('togpx')
 const xmlParser = require('xmldom').DOMParser
 const _ = require('underscore')
+const remote = require('electron').remote
+const BrowserWindow = remote.BrowserWindow
+const url = require('url')
+const path = require('path')
 
 const videoElm = document.querySelector('.main-video video')
 const chooseVideoElm = document.querySelector('#choose-video')
@@ -61,6 +65,7 @@ const saveProjectElm = document.querySelector('#save-project')
 const openProjectElm = document.querySelector('#open-project')
 const infoDialogElm = document.querySelector('.info-dialog')
 const infoMessageElm = document.querySelector('.info-dialog .message-details')
+const renderButtonElm = document.querySelector('#render')
 
 const feetPerMeter = 3.28084
 
@@ -154,7 +159,6 @@ function initializeMap() {
     trackVideoLockElm.classList.add('fa-unlock')
     theMap.on('click', handleMapClick)
     theMap.on('zoomend', z => {
-        console.log('zoom', z.target._zoom)
         mapZoomElm.value = z.target._zoom
     })
     currentElevationDrawingCtx = currentElevationCanvasElm.getContext('2d')
@@ -939,6 +943,35 @@ function handleTrackFocusBlur(event) {
 
 }
 
+function handleRender() {
+
+    const options = {
+        movable: false,
+        resizable: false,
+        fullscreen: true,
+        fullscreenable: true,
+        title: 'render',
+        frame: true,
+        enableLargerThanScreen: true,
+        height: 1080,
+        width: 1920
+    }
+
+    const windowURL = url.format({
+        pathname: path.join(__dirname, 'render.html'),
+        protocol: 'file:',
+        slashes: true
+    })
+
+    const sharedObj = remote.getGlobal('sharedObj')
+    console.log('video time', videoElm.currentTime)
+    sharedObj.videoURL = videoElm.src
+    sharedObj.videoTime = videoElm.currentTime
+    const win = new BrowserWindow(options)
+
+    win.loadURL(windowURL)
+}
+
 function handleNewWaypoint(event) {
     if (event.key === 'Enter') {
         console.log('handle new waypoint', mapMouseEvent)
@@ -983,6 +1016,8 @@ function showError(title, message) {
     errorDialogElm.classList.remove('hidden')
 }
 
+renderButtonElm.addEventListener('click', handleRender)
+
 errorOKElm.addEventListener('click', () => {
     errorDialogElm.classList.add('hidden')
 })
@@ -1007,7 +1042,6 @@ titleTextInput.addEventListener('input', function() {
 })
 
 mapZoomElm.addEventListener('input', function() {
-    console.log('zooming to', this.value)
     theMap.setZoom(this.value)
     settings.set('mapZoom', this.value)
     theMap.invalidateSize()
