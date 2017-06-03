@@ -9,7 +9,9 @@ const moment = require('moment')
 const settings = require('electron-settings')
 const geolib = require('geolib')
 const toGeoJSON = require('togeojson')
+const toGPX = require('togpx')
 const xmlParser = require('xmldom').DOMParser
+const _ = require('underscore')
 
 const videoElm = document.querySelector('.main-video video')
 const chooseVideoElm = document.querySelector('#choose-video')
@@ -23,6 +25,7 @@ const dateTimeElm = document.querySelector('.text-overlay #date-time')
 const speedElevationElm = document.querySelector('.text-overlay #speed-elevation')
 const latlonElm = document.querySelector('.text-overlay #latlon')
 const mapOpacityElm = document.querySelector('#map-opacity')
+const elevationOpacityElm = document.querySelector('#elevation-opacity')
 const mapOverlayElm = document.querySelector('.map-overlay')
 const mapSizeElm = document.querySelector('#map-size')
 const encodeDateElm = document.querySelector('#encode-date')
@@ -53,6 +56,11 @@ const errorDialogElm = document.querySelector('.error-dialog')
 const errorTitleElm = document.querySelector('.error-dialog .content .message')
 const errorDetailsElm = document.querySelector('.error-dialog .content .message-details')
 const errorOKElm = document.querySelector('.error-dialog .content button')
+const showElevationGraphElm = document.querySelector('#show-elevation')
+const saveProjectElm = document.querySelector('#save-project')
+const openProjectElm = document.querySelector('#open-project')
+const infoDialogElm = document.querySelector('.info-dialog')
+const infoMessageElm = document.querySelector('.info-dialog .message-details')
 
 const feetPerMeter = 3.28084
 
@@ -129,7 +137,7 @@ const trackFileFilters = [{
 }]
 
 let trackStartMoment, videoStartMoment, trackLayer, tileLayer, checkVideoInterval, trackPoints, trackIndex,
-    trackMarker, locked, videoSliderPosition, trackSliderPosition, secondsPerVideoFrame,
+    trackMarker, locked, videoSliderPosition, secondsPerVideoFrame,
     lockedPositions, activeSlider, mapMouseEvent, gpxJSON, loadedGpxFile,
     elevationTrackPoints, elevationDrawingCtx, currentElevationDrawingCtx, fullGeoJSON
 
@@ -137,7 +145,6 @@ function initializeMap() {
     tileLayer = openTopoTiles
     tileLayer.addTo(theMap)
     locked = false
-    trackSliderPosition = 0
     videoSliderPosition = 0
     trackIndex = 0
     secondsPerVideoFrame = 1 / framesPerSecond
@@ -190,7 +197,7 @@ function loadSettings() {
     if (settings.has('lastTrackPath')) {
     // waits for map to initialize... simpler this way
         setTimeout(() => {
-            handleTrackFile(settings.get('lastTrackPath'))
+            handleTrackFile(settings.get('lastTrackPath'), true)
         }, 500)
     }
 
@@ -206,9 +213,13 @@ function loadSettings() {
         mapOverlayElm.style.opacity = parseInt(settings.get('mapOpacity')) / 100.0
         mapOpacityElm.value = settings.get('mapOpacity')
     }
+    if (settings.has('elevationOpacity')) {
+        elevationGraphElm.style.opacity = parseInt(settings.get('elevationOpacity')) / 100.0
+        elevationOpacityElm.value = settings.get('elevationOpacity')
+    }
     if (settings.has('mapZoom')) {
         mapZoomElm.value = settings.get('mapZoom')
-    // setting the actual map zoom is handled in loading the track
+        // setting the actual map zoom is handled in loading the track
     }
 
     if (settings.has('tileLayer')) {
@@ -228,11 +239,25 @@ function loadSettings() {
         trackVideoLockElm.classList.add('fa-lock')
         trackVideoLockElm.classList.remove('fa-unlock')
         lockedPositions = settings.get('lockedPositions')
-        videoElm.currentTime = lockedPositions.videoCurrentTimeSec
-        videoPositionElm.value = lockedPositions.videoFrame
-        trackPositionElm.value = lockedPositions.trackIndex
+        lockedPositions.moment = moment(lockedPositions.time)
+        // videoElm.currentTime = lockedPositions.videoCurrentTimeSec
+        // videoPositionElm.value = lockedPositions.videoFrame
         locked = true
-
+    }
+    // oh no, a 🐛
+    if (settings.has('trackIndex')) {
+        setTimeout(() => {
+            trackIndex = parseInt(settings.get('trackIndex'))
+            trackPositionElm.value = trackIndex
+            updateDisplayFromTrackPosition()
+        }, 2000)
+    }
+    if (settings.has('videoCurrentTime')) {
+        setTimeout(() => {
+            const currentTime = settings.get('videoCurrentTime')
+            videoElm.currentTime = currentTime
+            videoPositionElm.value = videoElm.currentTime * framesPerSecond
+        }, 2000)
     }
 }
 
@@ -253,11 +278,11 @@ function getTrackIndexForVideoPosition(allowBackwards) {
   // if allowBackwards is true, this means we need to start searching from the begining of the track points
   // this is used when the user is scribbing with the range slider and it's possible they are scrubbing backwards
     let i = allowBackwards ? 0 : trackIndex
-    for (let found = false; !found && i < trackPoints.length; i++) {
+    for (let found = false; !found && i < trackPoints.properties.coordTimes.length; i++) {
     // console.log('i',i)
 
     // console.log('diffing ', realWorldVideoTimeAtCurrentPoint.toISOString(), ' to ', trackPoints[i].moment.toISOString())
-        let dif = realWorldVideoTimeAtCurrentPoint.diff(trackPoints[i].moment)
+        let dif = realWorldVideoTimeAtCurrentPoint.diff(trackPoints.properties.coordMoments[i])
     // console.log('dif', dif)
         if (dif < 0) {
             found = true
@@ -271,6 +296,7 @@ function getTrackIndexForVideoPosition(allowBackwards) {
 function checkVideo() {
   // update the position slider, which has one tick per frame
     videoPositionElm.value = videoElm.currentTime * framesPerSecond
+    saveVideoPosition(videoElm.currentTime)
 
     if (locked) {
         trackIndex = getTrackIndexForVideoPosition()
@@ -513,12 +539,24 @@ function drawCurrentElevationMarker() {
         return elevationTrackPoints[ti]
     })()
 
+    // const lineWidth = Math.max(4, Math.round(0.01 * currentElevationCanvasElm.width))
+    const lineWidth = 4
+
     // draw a white vertical line
-    currentElevationDrawingCtx.beginPath()
     currentElevationDrawingCtx.clearRect(0, 0, currentElevationCanvasElm.width, currentElevationCanvasElm.height)
+    currentElevationDrawingCtx.beginPath()
     currentElevationDrawingCtx.moveTo(closestPoint.x, currentElevationCanvasElm.height)
-    currentElevationDrawingCtx.strokeStyle = '#FFFFFF'
     currentElevationDrawingCtx.lineTo(closestPoint.x, 0)
+    currentElevationDrawingCtx.strokeStyle = '#000000'
+    currentElevationDrawingCtx.lineWidth = 4
+    currentElevationDrawingCtx.stroke()
+    currentElevationDrawingCtx.closePath()
+
+    currentElevationDrawingCtx.beginPath()
+    currentElevationDrawingCtx.moveTo(closestPoint.x, currentElevationCanvasElm.height)
+    currentElevationDrawingCtx.lineTo(closestPoint.x, 0)
+    currentElevationDrawingCtx.strokeStyle = '#FFFFFF'
+    currentElevationDrawingCtx.lineWidth = 2
     currentElevationDrawingCtx.stroke()
     currentElevationDrawingCtx.closePath()
 }
@@ -630,6 +668,7 @@ function drawTrack(geoJSONLinestring) {
     }
     trackLayer = L.geoJSON(fullGJ, {style: trackStyle})
     trackLayer.addTo(theMap)
+
     theMap.fitBounds(trackLayer.getBounds())
 }
 
@@ -683,7 +722,6 @@ function displayTrack(geoJSONLinestringFeature) {
     lonFieldElm.innerHTML = parseFloat(LL[1]).toFixed(6)
 
     drawTrack(geoJSONLinestringFeature)
-
 }
 
 function handleGPXFile(path) {
@@ -749,21 +787,21 @@ function handleTrackColorInput() {
 }
 
 function updateDisplayFromTrackPosition() {
-    const ll = L.latLng(trackPoints[trackIndex].$.lat, trackPoints[trackIndex].$.lon)
+    const ll = L.latLng(trackPoints.geometry.coordinates[trackIndex][1], trackPoints.geometry.coordinates[trackIndex][0])
     theMap.panTo(ll)
     trackMarker.setLatLng(ll)
 
     const previousTrackIndex = Math.max(trackIndex - 1, 0)
 
     const prevPointTime = {
-        lat: trackPoints[previousTrackIndex].$.lat,
-        lng: trackPoints[previousTrackIndex].$.lon,
-        time: moment(trackPoints[previousTrackIndex].time[0]).valueOf()
+        lat: trackPoints.geometry.coordinates[previousTrackIndex][1],
+        lng: trackPoints.geometry.coordinates[previousTrackIndex][0],
+        time: trackPoints.properties.coordMoments[previousTrackIndex].valueOf()
     }
     const currentPointTime = {
-        lat: trackPoints[trackIndex].$.lat,
-        lng: trackPoints[trackIndex].$.lon,
-        time: moment(trackPoints[trackIndex].time[0]).valueOf()
+        lat: trackPoints.geometry.coordinates[trackIndex][1],
+        lng: trackPoints.geometry.coordinates[trackIndex][0],
+        time: trackPoints.properties.coordMoments[trackIndex].valueOf()
     }
 
     const speedMPH = geolib.getSpeed(prevPointTime, currentPointTime, {
@@ -775,11 +813,19 @@ function updateDisplayFromTrackPosition() {
     speedFieldElm.innerHTML = Math.round(speedMPH)
     headingFieldElm.innerHTML = Math.round(heading)
     compassElm.innerHTML = compassDir.exact
-    latFieldElm.innerHTML = parseFloat(trackPoints[trackIndex].$.lat).toFixed(6)
-    lonFieldElm.innerHTML = parseFloat(trackPoints[trackIndex].$.lon).toFixed(6)
-    elevationElm.innerHTML = Math.round(trackPoints[trackIndex].ele[0] * feetPerMeter) // TODO handle unit preference
-    dateTimeElm.innerHTML = moment(trackPoints[trackIndex].time[0]).format('ddd MMM DD, YYYY hh:mm:ss a')
+    latFieldElm.innerHTML = parseFloat(trackPoints.geometry.coordinates[trackIndex][1]).toFixed(6)
+    lonFieldElm.innerHTML = parseFloat(trackPoints.geometry.coordinates[trackIndex][0]).toFixed(6)
+    elevationElm.innerHTML = Math.round(trackPoints.geometry.coordinates[trackIndex][2] * feetPerMeter) // TODO handle unit preference
+    dateTimeElm.innerHTML = trackPoints.properties.coordMoments[trackIndex].format('ddd MMM DD, YYYY hh:mm:ss a')
 }
+
+let saveTrackIndex = _.throttle(() => {
+    settings.set('trackIndex', trackIndex)
+}, 1000)
+
+let saveVideoPosition = _.throttle((currentTime) => {
+    settings.set('videoCurrentTime', currentTime)
+}, 1000)
 
 function handleTrackPositionChange() {
     if (!trackPoints) {
@@ -787,23 +833,25 @@ function handleTrackPositionChange() {
     }
 
   // set the global track index per the slider
-    trackIndex = this.value
-    console.log('trackIndex', trackIndex, 'currentPoint', trackPoints[trackIndex])
+    trackIndex = parseInt(this.value)
+
+    console.log('trackIndex', trackIndex, 'currentPoint', trackPoints.geometry.coordinates[trackIndex])
 
     if (locked) {
-    // this is the number of millis between the locked track position and the current track position
-        const realWorldSecDiff = trackPoints[trackIndex].moment.diff(lockedPositions.moment) / 1000
+        // this is the number of millis between the locked track position and the current track position
+        const realWorldSecDiff = trackPoints.properties.coordMoments[trackIndex].diff(lockedPositions.moment) / 1000
         console.log('realWorldSecDiff', realWorldSecDiff)
         newVideoPositionSeconds = lockedPositions.videoCurrentTimeSec + realWorldSecDiff / secondsPerVideoFrame / framesPerSecond
         console.log('newVideoPositionSeconds', newVideoPositionSeconds)
         videoElm.currentTime = newVideoPositionSeconds
         videoPositionElm.value = videoElm.currentTime * framesPerSecond
+        saveVideoPosition(videoElm.currentTime)
     }
+
+    saveTrackIndex()
 
     updateDisplayFromTrackPosition()
     drawCurrentElevationMarker()
-
-    trackSliderPosition = this.value
 }
 
 function handleChooseVideoType() {
@@ -840,7 +888,6 @@ function handleChooseVideoType() {
     if (this.value) {
         settings.set('secondsPerVideoFrame', this.value)
     }
-
 }
 
 function handleLock() {
@@ -861,10 +908,10 @@ function handleLock() {
     locked = !locked
     if (locked) {
         lockedPositions.videoCurrentTimeSec = videoElm.currentTime
-        lockedPositions.videoFrame = videoPositionElm.value
+        lockedPositions.videoFrame = parseInt(videoPositionElm.value)
         lockedPositions.trackIndex = trackIndex
-        lockedPositions.time = trackPoints[trackIndex].time[0]
-        lockedPositions.moment = moment(trackPoints[trackIndex].time[0])
+        lockedPositions.time = trackPoints.properties.coordTimes[trackIndex]
+        lockedPositions.moment = trackPoints.properties.coordMoments[trackIndex]
         settings.set('lockedPositions', lockedPositions)
         console.log('lockedPositions', lockedPositions)
     }
@@ -908,10 +955,10 @@ function handleNewWaypoint(event) {
         gpxJSON.gpx.wpt.push(newWaypoint)
         const xml = builder.buildObject(gpxJSON)
 
-    // TODO ok to write to the file we loaded?
+        // TODO ok to write to the file we loaded?  Maybe write a .original
         fs.writeFileSync(loadedGpxFile, xml, 'utf-8')
 
-    // now add a marker
+        // now add a marker
         addStarMarker(this.value, mapMouseEvent.latlng.lat, mapMouseEvent.latlng.lng)
 
         addWaypointDialog.classList.add('hidden')
@@ -920,6 +967,14 @@ function handleNewWaypoint(event) {
     if (event.key === 'Escape') {
         addWaypointDialog.classList.add('hidden')
     }
+}
+
+function flashInfo(message) {
+    infoMessageElm.innerHTML = message
+    infoDialogElm.classList.remove('seethrough')
+    setTimeout(() => {
+        infoDialogElm.classList.add('seethrough')
+    }, 5000)
 }
 
 function showError(title, message) {
@@ -937,6 +992,15 @@ showSpeedElevationElm.addEventListener('click', handleTextOverlayDisplay)
 showLLElm.addEventListener('click', handleTextOverlayDisplay)
 titleTextInput.addEventListener('input', handleTextOverlayDisplay)
 
+showElevationGraphElm.addEventListener('click', function() {
+    console.log(this)
+    if (this.checked) {
+        document.querySelector('.elevation-graph-outer').classList.remove('hidden')
+    } else {
+        document.querySelector('.elevation-graph-outer').classList.add('hidden')
+    }
+})
+
 titleTextInput.addEventListener('input', function() {
     titleElm.innerHTML = this.value
     settings.set('title', this.value)
@@ -952,6 +1016,11 @@ mapZoomElm.addEventListener('input', function() {
 mapOpacityElm.addEventListener('input', function() {
     mapOverlayElm.style.opacity = parseInt(this.value) / 100.0
     settings.set('mapOpacity', this.value)
+})
+
+elevationOpacityElm.addEventListener('input', function() {
+    elevationGraphElm.style.opacity = parseInt(this.value) / 100.0
+    settings.set('elevationOpacity', this.value)
 })
 
 mapSizeElm.addEventListener('input', function() {
@@ -990,7 +1059,8 @@ trackPositionElm.addEventListener('input', handleTrackPositionChange)
 
 videoPositionElm.addEventListener('input', function() {
     videoElm.currentTime = this.value / framesPerSecond
-  // compute the real world time of this video position and find the closest track point
+    saveVideoPosition(videoElm.currentTime)
+    // compute the real world time of this video position and find the closest track point
     if (locked) {
         trackIndex = getTrackIndexForVideoPosition(true) // allowBackwards is true
         trackPositionElm.value = trackIndex
@@ -1014,10 +1084,50 @@ videoElm.addEventListener('pause', () => {
 
 newWaypointElm.addEventListener('keydown', handleNewWaypoint)
 
+saveProjectElm.addEventListener('click', function() {
+    dialog.showSaveDialog({
+        title: 'save project',
+        defaultPath: titleTextInput.value,
+        filters: [{
+            name: 'json',
+            extensions: ['json']
+        }]
+    }, (path) => {
+        console.log('chosen path', path)
+        if (path) {
+            fs.writeFileSync(path, JSON.stringify(settings.getAll(), null, 2), 'utf-8')
+            flashInfo(`Saved ${path}`)
+        }
+    })
+})
+
+openProjectElm.addEventListener('click', function() {
+    dialog.showOpenDialog({
+        title: 'choose project',
+        filters: [{
+            name: 'json',
+            extensions: ['json']
+        }],
+        properties: ['openFile']
+    }, (path) => {
+        console.log('chosen path', path)
+        if (path) {
+            theMap.eachLayer(function(layer) {
+                theMap.removeLayer(layer)
+            })
+            const projJSONText = fs.readFileSync(path[0], 'utf-8')
+            const projectJSON = JSON.parse(projJSONText)
+            settings.setAll(projectJSON)
+            loadSettings()
+        }
+    })
+
+})
+
 document.querySelector('body').addEventListener('resize', () => {
     console.log('body resize')
 
-  // TODO, handle the canvas resizing here
+  // TODO, handle the canvas resizing here for elevation graph, if necessary
 })
 
 initializeMap()

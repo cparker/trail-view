@@ -1,0 +1,26 @@
+{
+  "lastVideoPath": [
+    "/opt/projects/trail-view/rabbit-valley.mov"
+  ],
+  "textColor": "#fffddf",
+  "lastTrackPath": "/opt/projects/trail-view/rabbit-valey.gpx",
+  "trackColor": "#cd4ee5",
+  "mapHeight": "52",
+  "mapWidth": "52",
+  "mapOpacity": "65",
+  "title": "Rabbit Valley, near Fruita, CO",
+  "secondsPerVideoFrame": "5-sec-time-lapse",
+  "mapZoom": "14",
+  "playbackSpeed": "23",
+  "tileLayer": "open-cycle",
+  "elevationOpacity": "24",
+  "trackIndex": 651,
+  "videoCurrentTime": 38.673333,
+  "lockedPositions": {
+    "videoCurrentTimeSec": 1.1,
+    "videoFrame": 33,
+    "trackIndex": 2,
+    "time": "2017-05-06T14:25:50Z",
+    "moment": "2017-05-06T14:25:50.000Z"
+  }
+}

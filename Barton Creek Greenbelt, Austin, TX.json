@@ -1,0 +1,26 @@
+{
+  "lastVideoPath": [
+    "/Users/cparker/Downloads/austin-mtb-2017-03-27.mov"
+  ],
+  "textColor": "#fffddf",
+  "lastTrackPath": "/Users/cparker/Downloads/austin-mtb-3-27-17.GPX",
+  "trackColor": "#cd4ee5",
+  "mapHeight": "52",
+  "mapWidth": "52",
+  "mapOpacity": "65",
+  "title": "Barton Creek Greenbelt, Austin, TX",
+  "secondsPerVideoFrame": "5-sec-time-lapse",
+  "mapZoom": "14",
+  "playbackSpeed": "23",
+  "tileLayer": "open-cycle",
+  "elevationOpacity": "45",
+  "trackIndex": 131,
+  "videoCurrentTime": 8.266666,
+  "lockedPositions": {
+    "videoCurrentTimeSec": 2.666666,
+    "videoFrame": 80,
+    "trackIndex": 70,
+    "time": "2017-03-27T14:11:51Z",
+    "moment": "2017-03-27T14:11:51.000Z"
+  }
+}

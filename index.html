@@ -41,7 +41,7 @@
       </div>
       <div class="slider-w-label track">
         <label>track   <i class="fa fa-caret-right"></i></label>
-        <input id="track-position" type="range" min="0" value="0"></input>
+        <input id="track-position" type="range" min="0"></input>
       </div>
     </div>
     <i id="track-video-lock" class="lock-unlock fa fa-lock fa-2x"></i>
@@ -75,6 +75,10 @@
         <input id="show-LL" type="checkbox" checked>show Lat / Lon</input>
       </div>
 
+      <div class="control">
+        <input id="show-elevation" type="checkbox" checked>show elevation graph</input>
+      </div>
+
     </div>
 
     <div class="control-column two">
@@ -82,6 +86,11 @@
       <div class="control">
         <label>map opacity</label>
         <input id="map-opacity" min="0" max="100" value="50" type="range"></input>
+      </div>
+
+      <div class="control">
+        <label>elevation graph opacity</label>
+        <input id="elevation-opacity" min="0" max="100" value="50" type="range"></input>
       </div>
 
       <div class="control">
@@ -141,7 +150,13 @@
 
     <div class="control-column four">
       <div class="control">
-        <button>Export</button>
+        <button>Render <i class="fa fa-film"></i></button>
+      </div>
+      <div class="control">
+        <button id="save-project">Save <i class="fa fa-save"></i></button>
+      </div>
+      <div class="control">
+        <button id="open-project">Open <i class="fa fa-share fa-flip-horizontal"></i></button>
       </div>
     </div>
 
@@ -155,8 +170,19 @@
   <div class="error-dialog hidden">
     <div class="content">
       <div class="message">Something terrible happened. Who knows what caused it. I blame the president!!</div>
-      <div class="message-details">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.  Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</div>
+      <div class="message-details">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+        It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with
+        desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an
+        unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with
+        the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</div>
       <div class="footer"><button>OK</button></div>
+    </div>
+  </div>
+
+  <div class="info-dialog seethrough">
+    <div class="content">
+      <div class="icon"><i class="fa fa-info fa-2x"></i></div>
+      <div class="message-details">File saved...</div>
     </div>
   </div>
 
