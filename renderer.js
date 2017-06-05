@@ -387,26 +387,30 @@ function displayStart(start) {
 function readVideoMetadata(path) {
     displayPath(path)
     const exec = require('child_process').exec
-  // attempt to use mediainfo
+      // attempt to use mediainfo
     exec(`mediainfo --Output=XML ${path}`, (err, stdout, stderr) => {
         if (err) {
             console.log('error gathering mediainfo', err)
         }
-        xml2jsParser.parseString(stdout, (err, data) => {
-            let videoStartDate = data.Mediainfo.File[0].track[0].Encoded_date[0]
-            let videoStartDateFormatted
+        try {
+            xml2jsParser.parseString(stdout, (err, data) => {
+                let videoStartDate = data.Mediainfo.File[0].track[0].Encoded_date[0]
+                let videoStartDateFormatted
 
-            console.log(videoStartDate)
+                console.log(videoStartDate)
 
-      // format is usually like UTC 2013-04-28 21:41:14
-            if (videoStartDate.indexOf('UTC') != -1) {
-                const dateTimeOnly = videoStartDate.match(/^\s*UTC\s*(.*?)$/i)[1]
-                trackStartMoment = moment(dateTimeOnly + 'Z')
-                videoStartDateFormatted = trackStartMoment.format('ddd MMM DD h:mm:ss A')
+            // format is usually like UTC 2013-04-28 21:41:14
+                if (videoStartDate.indexOf('UTC') != -1) {
+                    const dateTimeOnly = videoStartDate.match(/^\s*UTC\s*(.*?)$/i)[1]
+                    trackStartMoment = moment(dateTimeOnly + 'Z')
+                    videoStartDateFormatted = trackStartMoment.format('ddd MMM DD h:mm:ss A')
 
-            }
-            encodeDateElm.innerHTML = `Start: ${videoStartDateFormatted}`
-        })
+                }
+                encodeDateElm.innerHTML = `Start: ${videoStartDateFormatted}`
+            })
+        } catch (err) {
+            showError('Error Reading Metadata', `Error reading video metadata\n\n${err}`)
+        }
     })
 }
 
@@ -975,21 +979,25 @@ function handleRender() {
 function handleNewWaypoint(event) {
     if (event.key === 'Enter') {
         console.log('handle new waypoint', mapMouseEvent)
-        const newWaypoint = {
-            $: {
-                lat: `${mapMouseEvent.latlng.lat}`,
-                lon: `${mapMouseEvent.latlng.lng}`
+        fullGeoJSON.features.push({
+            type: 'Feature',
+            properties: {
+                name: this.value
             },
-            name: this.value
-        }
-        if (!gpxJSON.gpx.wpt) {
-            gpxJSON.gpx.wpt = []
-        }
-        gpxJSON.gpx.wpt.push(newWaypoint)
-        const xml = builder.buildObject(gpxJSON)
+            geometry: {
+                type: 'Point',
+                coordinates: [
+                    mapMouseEvent.latlng.lng,
+                    mapMouseEvent.latlng.lat
+                ]
+            }
+        })
+
+        const gpxXMLString = toGPX(fullGeoJSON)
+        fs.writeFileSync(chooseTrackElm.value, gpxXMLString, 'utf-8')
 
         // TODO ok to write to the file we loaded?  Maybe write a .original
-        fs.writeFileSync(loadedGpxFile, xml, 'utf-8')
+        // fs.writeFileSync(loadedGpxFile, xml, 'utf-8')
 
         // now add a marker
         addStarMarker(this.value, mapMouseEvent.latlng.lat, mapMouseEvent.latlng.lng)
@@ -1168,5 +1176,9 @@ initializeMap()
 loadSettings()
 
 /**
+
+  We're gonna have to just load the main render.js JavaScript file into the new popped up window
+  we may have to change how things get initialized
+  the checkVideo interval part is what is needed
 
 */

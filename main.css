@@ -49,6 +49,7 @@ body {
   bottom: 0.5em;
   /*border:1px solid white;*/
   left: 0.8em;
+  z-index: 2;
 }
 
 .track-video-controls {
@@ -333,4 +334,14 @@ body {
 
 .info-dialog .message-details {
   flex:15;
+}
+
+.block-timecode {
+  height: 31px;
+  width: 300px;
+  background: #463d31;
+  opacity: 1;
+  position: absolute;
+  bottom: 13px;
+  left: 0;
 }
