@@ -5,3 +5,4 @@ foo.webm
 
 .vscode/
 *.code-workspace
+.gitconfig
