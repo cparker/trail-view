@@ -13,109 +13,110 @@
   <script src="node_modules/leaflet/dist/leaflet.js"></script>
   <script src='node_modules/leaflet-omnivore/leaflet-omnivore.min.js'></script>
   <script src='node_modules/leaflet-rotatedmarker/leaflet.rotatedMarker.js'></script>
+  <div class="root-content">
 
 
-  <div class="main-video">
-    <video src="" poster="video-placeholder.jpg"></video>
-    <div class="text-overlay">
-      <label id="title">Rabbit Valley</label>
-      <label id="date-time">Saturday May 5th, 2017</label>
-      <label id="speed-elevation"><span id="speed-field">--</span> MPH, <span id="elevation-field">5280</span> Ft., <span id="heading-field">342</span>º <span id="compass-field">NNW</span></label>
-      <!-- TODO can't forget to make N and W dynamic!!! -->
-      <label id="latlon"><span id="lat-field">45.042975421</span> º N, <span id="lon-field">-104.12348731</span> º W</label>
-    </div>
-    <div id="map" class="map-overlay"></div>
-    <div class="elevation-graph-outer">
-      <div class="elevation-graph-inner">
-        <canvas id="elevation-canvas-element"></canvas>
-        <canvas id="current-elevation-marker-canvas-element"></canvas>
+    <div class="main-video">
+      <video src="" poster="video-placeholder.jpg"></video>
+      <div class="text-overlay">
+        <label id="title">Rabbit Valley</label>
+        <label id="date-time">Saturday May 5th, 2017</label>
+        <label id="speed-elevation"><span id="speed-field">--</span> MPH, <span id="elevation-field">5280</span> Ft., <span id="heading-field">342</span>º <span id="compass-field">NNW</span></label>
+        <!-- TODO can't forget to make N and W dynamic!!! -->
+        <label id="latlon"><span id="lat-field">45.042975421</span> º N, <span id="lon-field">-104.12348731</span> º W</label>
+      </div>
+      <div id="map" class="map-overlay"></div>
+      <div class="elevation-graph-outer">
+        <div class="elevation-graph-inner">
+          <canvas id="elevation-canvas-element"></canvas>
+          <canvas id="current-elevation-marker-canvas-element"></canvas>
+        </div>
+      </div>
+      <!-- This shouldn't be permenant -->
+      <div class="block-timecode">
       </div>
     </div>
-    <!-- This shouldn't be permenant -->
-    <div class="block-timecode">
-    </div>
-  </div>
-  <div class="track-video-controls">
-    <i id="play-pause" class="play-pause fa fa-play fa-2x"></i>
-    <div class="sliders">
-      <div class="slider-w-label video">
-        <label>video   <i class="fa fa-caret-right"></i></label>
-        <input id="video-position" type="range" min="0" value="0"></input>
+    <div class="track-video-controls">
+      <i id="play-pause" class="play-pause fa fa-play fa-2x"></i>
+      <div class="sliders">
+        <div class="slider-w-label video">
+          <label>video   <i class="fa fa-caret-right"></i></label>
+          <input id="video-position" type="range" min="0" value="0"></input>
+        </div>
+        <div class="slider-w-label track">
+          <label>track   <i class="fa fa-caret-right"></i></label>
+          <input id="track-position" type="range" min="0"></input>
+        </div>
       </div>
-      <div class="slider-w-label track">
-        <label>track   <i class="fa fa-caret-right"></i></label>
-        <input id="track-position" type="range" min="0"></input>
-      </div>
-    </div>
-    <i id="track-video-lock" class="lock-unlock fa fa-lock fa-2x"></i>
-  </div>
-
-
-  <div class="main-controls">
-
-    <div class="control-column one">
-      <div class="control choose-video">
-        <input id="choose-video" type="text" placeholder="choose video file (.mp4, .mov, .webm)"></text>
-        <label id="encode-date"></label>
-      </div>
-      <div class="control">
-        <input id="choose-track" type="text" placeholder="choose track file (.kml, .kmz, .gpx)"></text>
-        <label id="track-start-datetime"></label>
-      </div>
-      <div class="control">
-        <input id="video-title" type="text" placeholder="title"></input>
-      </div>
-
-      <div class="control">
-        <input id="show-date-time" type="checkbox" checked>show date time</input>
-      </div>
-
-      <div class="control">
-        <input id="show-speed-elevation" type="checkbox" checked>show speed, elevation, heading</input>
-      </div>
-
-      <div class="control">
-        <input id="show-LL" type="checkbox" checked>show Lat / Lon</input>
-      </div>
-
-      <div class="control">
-        <input id="show-elevation" type="checkbox" checked>show elevation graph</input>
-      </div>
-
+      <i id="track-video-lock" class="lock-unlock fa fa-lock fa-2x"></i>
     </div>
 
-    <div class="control-column two">
 
-      <div class="control">
-        <label>map opacity</label>
-        <input id="map-opacity" min="0" max="100" value="50" type="range"></input>
+    <div class="main-controls">
+
+      <div class="control-column one">
+        <div class="control choose-video">
+          <input id="choose-video" type="text" placeholder="choose video file (.mp4, .mov, .webm)"></text>
+          <label id="encode-date"></label>
+        </div>
+        <div class="control">
+          <input id="choose-track" type="text" placeholder="choose track file (.kml, .kmz, .gpx)"></text>
+          <label id="track-start-datetime"></label>
+        </div>
+        <div class="control">
+          <input id="video-title" type="text" placeholder="title"></input>
+        </div>
+
+        <div class="control">
+          <input id="show-date-time" type="checkbox" checked>show date time</input>
+        </div>
+
+        <div class="control">
+          <input id="show-speed-elevation" type="checkbox" checked>show speed, elevation, heading</input>
+        </div>
+
+        <div class="control">
+          <input id="show-LL" type="checkbox" checked>show Lat / Lon</input>
+        </div>
+
+        <div class="control">
+          <input id="show-elevation" type="checkbox" checked>show elevation graph</input>
+        </div>
+
       </div>
 
-      <div class="control">
-        <label>elevation graph opacity</label>
-        <input id="elevation-opacity" min="0" max="100" value="50" type="range"></input>
+      <div class="control-column two">
+
+        <div class="control">
+          <label>map opacity</label>
+          <input id="map-opacity" min="0" max="100" value="50" type="range"></input>
+        </div>
+
+        <div class="control">
+          <label>elevation graph opacity</label>
+          <input id="elevation-opacity" min="0" max="100" value="50" type="range"></input>
+        </div>
+
+        <div class="control">
+          <label>map zoom</label>
+          <input id="map-zoom" type="range" min="1" max="25" value="11"></input>
+        </div>
+
+        <div class="control">
+          <label>map size</label>
+          <input id="map-size" type="range" min="0" max="100" value="50"></input>
+        </div>
+
+        <div class="control">
+          <label>playback speed</label>
+          <input id="playback-speed" type="range" min="0" max="200" value="100"></input>
+        </div>
+
       </div>
 
-      <div class="control">
-        <label>map zoom</label>
-        <input id="map-zoom" type="range" min="1" max="25" value="11"></input>
-      </div>
-
-      <div class="control">
-        <label>map size</label>
-        <input id="map-size" type="range" min="0" max="100" value="50"></input>
-      </div>
-
-      <div class="control">
-        <label>playback speed</label>
-        <input id="playback-speed" type="range" min="0" max="200" value="100"></input>
-      </div>
-
-    </div>
-
-    <div class="control-column three">
-      <div class="control">
-        <select id="video-type">
+      <div class="control-column three">
+        <div class="control">
+          <select id="video-type">
           <option value="regular-video">regular video</option>
           <option value="1-sec-time-lapse">1 sec time lapse</option>
           <option value="2-sec-time-lapse">2 sec time lapse</option>
@@ -124,10 +125,10 @@
           <option value="30-sec-time-lapse">30 sec time lapse</option>
           <option value="60-sec-time-lapse">60 sec time lapse</option>
         </select>
-      </div>
+        </div>
 
-      <div class="control">
-        <select id="tile-layer">
+        <div class="control">
+          <select id="tile-layer">
           <option value="open-topo">Open Topo</option>
           <option value="usa-topo">USA Topo</option>
           <option value="usgs-topo">USGS Topo</option>
@@ -136,56 +137,57 @@
           <option value="open-cycle">Open Cycle Map</option>
           <option value="open-street">Open Street Map</option>
         </select>
+        </div>
+
+
+        <div class="control color">
+          <input id="track-color" type="color" value="#0000FF"></input>
+          <label>track color</label>
+        </div>
+
+        <div class="control color">
+          <input id="text-color" type="color" value="#FFFFFF"></input>
+          <label>text color</label>
+        </div>
+
       </div>
 
-
-      <div class="control color">
-        <input id="track-color" type="color" value="#0000FF"></input>
-        <label>track color</label>
-      </div>
-
-      <div class="control color">
-        <input id="text-color" type="color" value="#FFFFFF"></input>
-        <label>text color</label>
+      <div class="control-column four">
+        <div class="control">
+          <button id="render">Render <i class="fa fa-film"></i></button>
+        </div>
+        <div class="control">
+          <button id="save-project">Save <i class="fa fa-save"></i></button>
+        </div>
+        <div class="control">
+          <button id="open-project">Open <i class="fa fa-share fa-flip-horizontal"></i></button>
+        </div>
       </div>
 
     </div>
 
-    <div class="control-column four">
-      <div class="control">
-        <button id="render">Render <i class="fa fa-film"></i></button>
-      </div>
-      <div class="control">
-        <button id="save-project">Save <i class="fa fa-save"></i></button>
-      </div>
-      <div class="control">
-        <button id="open-project">Open <i class="fa fa-share fa-flip-horizontal"></i></button>
+    <div class="add-waypoint hidden">
+      <label>new marker name</label>
+      <input id="new-waypoint" type="text"></input>
+    </div>
+
+    <div class="error-dialog hidden">
+      <div class="content">
+        <div class="message">Something terrible happened. Who knows what caused it. I blame the president!!</div>
+        <div class="message-details">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+          It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with
+          desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when
+          an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s
+          with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</div>
+        <div class="footer"><button>OK</button></div>
       </div>
     </div>
 
-  </div>
-
-  <div class="add-waypoint hidden">
-    <label>new marker name</label>
-    <input id="new-waypoint" type="text"></input>
-  </div>
-
-  <div class="error-dialog hidden">
-    <div class="content">
-      <div class="message">Something terrible happened. Who knows what caused it. I blame the president!!</div>
-      <div class="message-details">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
-        It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with
-        desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an
-        unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with
-        the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</div>
-      <div class="footer"><button>OK</button></div>
-    </div>
-  </div>
-
-  <div class="info-dialog seethrough">
-    <div class="content">
-      <div class="icon"><i class="fa fa-info fa-2x"></i></div>
-      <div class="message-details">File saved...</div>
+    <div class="info-dialog seethrough">
+      <div class="content">
+        <div class="icon"><i class="fa fa-info fa-2x"></i></div>
+        <div class="message-details">File saved...</div>
+      </div>
     </div>
   </div>
 

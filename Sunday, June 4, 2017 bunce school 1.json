@@ -1,0 +1,26 @@
+{
+  "lastVideoPath": [
+    "/Users/cparker/Downloads/Sunday, June 4, 2017 bunce school 1.mov"
+  ],
+  "textColor": "#fffddf",
+  "lastTrackPath": "/Users/cparker/Downloads/Sunday, June 4, 2017-bunce-school.gpx",
+  "trackColor": "#cd4ee5",
+  "mapHeight": "66",
+  "mapWidth": "66",
+  "mapOpacity": "65",
+  "title": "Bunce School Road",
+  "secondsPerVideoFrame": "2-sec-time-lapse",
+  "mapZoom": "16",
+  "playbackSpeed": "23",
+  "tileLayer": "open-cycle",
+  "elevationOpacity": "32",
+  "trackIndex": 697,
+  "videoCurrentTime": 99.083333,
+  "lockedPositions": {
+    "videoCurrentTimeSec": 9.533333,
+    "videoFrame": 286,
+    "trackIndex": 30,
+    "time": "2017-06-04T16:40:30Z",
+    "moment": "2017-06-04T16:40:30.000Z"
+  }
+}

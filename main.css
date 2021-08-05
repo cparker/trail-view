@@ -5,8 +5,7 @@
 html, body {
   height: 100%;
   font-family: sans-serif;
-  background-color: lightbrown;
-  overflow: auto;
+  background-color: #e7ded6;
 }
 
 html {
@@ -14,7 +13,13 @@ html {
 }
 
 body {
-  padding: 2%;
+  overflow:hidden;
+}
+
+.root-content {
+  padding:0;
+  height:98vh;
+  overflow:auto;
 }
 
 .hidden {

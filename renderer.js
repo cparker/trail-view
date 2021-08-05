@@ -16,6 +16,7 @@ const remote = require('electron').remote
 const BrowserWindow = remote.BrowserWindow
 const url = require('url')
 const path = require('path')
+const unzip = require('unzip')
 
 const videoElm = document.querySelector('.main-video video')
 const chooseVideoElm = document.querySelector('#choose-video')
@@ -756,6 +757,23 @@ function handleGPXFile(path) {
     }
 }
 
+function KMLFromKMZ(path) {
+  return ''
+}
+
+function handleKMZLFile(path) {
+    let rawKML = ''
+    if (path.endsWith('.kmz')) {
+        rawKML = KMLFromKMZ(path)
+    } else {
+        rawKML = fs.readFileSync(path, 'utf-8')
+    }
+    //console.log(rawKML)
+    const parsedKML = (new xmlParser().parseFromString(rawKML))
+    console.log(parsedKML)
+    return toGeoJSON.kml(parsedKML, { styles: true })
+}
+
 function handleTrackFile(path) {
     console.log('handling', path)
     chooseTrackElm.value = path
@@ -764,6 +782,9 @@ function handleTrackFile(path) {
         const geoJSON = handleGPXFile(path)
         fullGeoJSON = geoJSON
         settings.set('lastTrackPath', path)
+    } else if (path.toLowerCase().endsWith('kml') || path.toLowerCase().endsWith('kmz')) {
+        fullGeoJSON = handleKMZLFile(path)
+        console.log(fullGeoJSON)
     }
 }
 
